@@ -4,6 +4,7 @@ class LostItem {
   final String location;
   final String status;
   final String category;
+  final String? description;
 
   LostItem({
     required this.itemId,
@@ -11,15 +12,17 @@ class LostItem {
     required this.location,
     required this.status,
     required this.category,
+    this.description,
   });
 
   factory LostItem.fromJson(Map<String, dynamic> json) {
     return LostItem(
-      itemId: json['item_id'],
-      title: json['title'],
-      location: json['location'],
-      status: json['status'],
-      category: json['category'],
+      itemId: json['item_id'].toString(),
+      title: json['title'] ?? '',
+      location: json['location'] ?? '',
+      status: json['status'] ?? '',
+      category: json['category'] ?? '',
+      description: json['description'],
     );
   }
 }
