@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import '../models/lost_item.dart';
 import '../services/api_service.dart';
 
-class AddItemScreen extends StatefulWidget {
-  const AddItemScreen({super.key});
+class EditItemScreen extends StatefulWidget {
+  final LostItem item;
+
+  const EditItemScreen({super.key, required this.item});
 
   @override
-  State<AddItemScreen> createState() => _AddItemScreenState();
+  State<EditItemScreen> createState() => _EditItemScreenState();
 }
 
-class _AddItemScreenState extends State<AddItemScreen> {
+class _EditItemScreenState extends State<EditItemScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
@@ -25,6 +28,23 @@ class _AddItemScreenState extends State<AddItemScreen> {
   ];
 
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.text = widget.item.title;
+    _locationController.text = widget.item.location;
+    _selectedStatus = widget.item.status;
+
+
+    final categoryId = _categories.firstWhere(
+          (cat) => cat['name'] == widget.item.category || cat['id'] == widget.item.category,
+      orElse: () => _categories[0],
+    )['id'];
+
+    _selectedCategory = categoryId ?? '1';
+    _descriptionController.text = widget.item.description ?? '';
+  }
 
   @override
   void dispose() {
@@ -44,7 +64,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
     });
 
     try {
-      final success = await ApiService.addItem(
+      final result = await ApiService.updateItem(
+        itemId: widget.item.itemId,
         title: _titleController.text,
         location: _locationController.text,
         status: _selectedStatus,
@@ -52,23 +73,26 @@ class _AddItemScreenState extends State<AddItemScreen> {
         description: _descriptionController.text,
       );
 
-      if (success) {
+      if (result['success'] == true) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Item added successfully!'),
+          SnackBar(
+            content: Text(result['message'] ?? 'Item updated successfully!'),
             backgroundColor: Colors.green,
           ),
         );
         Navigator.pop(context, true);
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to add item. Please try again.'),
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to update item.'),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: $e'),
@@ -86,7 +110,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Item'),
+        title: const Text('Edit Item'),
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -151,6 +176,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select a category';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 24),
 
@@ -205,6 +236,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   onPressed: _isSubmitting ? null : _submitForm,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.orange,
                   ),
                   child: _isSubmitting
                       ? const SizedBox(
@@ -216,7 +248,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     ),
                   )
                       : const Text(
-                    'Submit Item',
+                    'Update Item',
                     style: TextStyle(fontSize: 16),
                   ),
                 ),

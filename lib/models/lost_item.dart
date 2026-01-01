@@ -25,4 +25,33 @@ class LostItem {
       description: json['description'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'item_id': itemId,
+      'title': title,
+      'location': location,
+      'status': status,
+      'category': category,
+      'description': description ?? '',
+    };
+  }
+
+
+  LostItem copyWith({
+    String? title,
+    String? location,
+    String? status,
+    String? category,
+    String? description,
+  }) {
+    return LostItem(
+      itemId: itemId,
+      title: title ?? this.title,
+      location: location ?? this.location,
+      status: status ?? this.status,
+      category: category ?? this.category,
+      description: description ?? this.description,
+    );
+  }
 }

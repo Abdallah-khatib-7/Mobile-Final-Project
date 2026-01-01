@@ -12,7 +12,6 @@ class ApiService {
       final response = await http.get(Uri.parse("$baseUrl/getLostItems.php"));
 
       print('DEBUG: Response status: ${response.statusCode}');
-      print('DEBUG: Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         try {
@@ -43,7 +42,7 @@ class ApiService {
 
     try {
       final response = await http.post(
-        Uri.parse("$baseUrl/addLostItem.php"),
+        Uri.parse("$baseUrl/addLostItems.php"),
         body: {
           'title': title,
           'location': location,
@@ -54,7 +53,6 @@ class ApiService {
       );
 
       print('DEBUG: Add item response status: ${response.statusCode}');
-      print('DEBUG: Add item response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
@@ -67,13 +65,11 @@ class ApiService {
     }
   }
 
-  // Update item status
   static Future<Map<String, dynamic>> updateItemStatus({
     required String itemId,
     required String status,
   }) async {
     print('DEBUG: Updating item $itemId to status: $status');
-    print('DEBUG: URL: $baseUrl/updateStatus.php');
 
     try {
       final response = await http.post(
@@ -88,34 +84,115 @@ class ApiService {
       );
 
       print('DEBUG: Update response status: ${response.statusCode}');
-      print('DEBUG: Update response body: ${response.body}');
 
       if (response.statusCode == 200) {
         try {
           final result = json.decode(response.body);
-          print('DEBUG: Parsed update result: $result');
-
           return {
             'success': result['success'] == true,
             'message': result['message'] ?? 'Unknown response',
             'data': result
           };
         } catch (e) {
-          print('ERROR parsing update response: $e');
           return {
             'success': false,
-            'message': 'Failed to parse server response: $e'
+            'message': 'Failed to parse server response'
           };
         }
       } else {
-        print('ERROR: Server returned status ${response.statusCode}');
         return {
           'success': false,
           'message': 'Server error: ${response.statusCode}'
         };
       }
     } catch (e) {
-      print('EXCEPTION during update: $e');
+      return {
+        'success': false,
+        'message': 'Network error: $e'
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteItem(String itemId) async {
+    print('DEBUG: Deleting item $itemId');
+
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/updateItem.php"),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'action': 'delete',
+          'item_id': itemId,
+        }),
+      );
+
+      print('DEBUG: Delete response status: ${response.statusCode}');
+      print('DEBUG: Delete response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        return {
+          'success': result['success'] == true,
+          'message': result['message'] ?? 'Unknown response',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': 'Server error: ${response.statusCode}'
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: $e'
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateItem({
+    required String itemId,
+    required String title,
+    required String location,
+    required String status,
+    required String category,
+    String? description,
+  }) async {
+    print('DEBUG: Updating item $itemId');
+
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/updateItem.php"),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'action': 'update',
+          'item_id': itemId,
+          'title': title,
+          'location': location,
+          'status': status,
+          'category': category,
+          'description': description ?? '',
+        }),
+      );
+
+      print('DEBUG: Update item response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        return {
+          'success': result['success'] == true,
+          'message': result['message'] ?? 'Unknown response',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': 'Server error: ${response.statusCode}'
+        };
+      }
+    } catch (e) {
       return {
         'success': false,
         'message': 'Network error: $e'
